@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import math
 
 # webcam index
 # -1 means auto select
@@ -26,11 +27,49 @@ def getParentContours(bwImage):
             cardContours.append(contours[i])
     return cardContours
 
-def getRectsFromContours(contours):
-    rects = []
+# Try approxPolyDP with multiple errors until we receive
+# a polygon with 4 sides
+def getQuadFromContourPoly(contour):
+    iters = 0
+    maxIters = 100
+    minError = 0.1
+    maxError = 10
+    currError = 2.5
+    while iters < maxIters:
+        polygon = cv2.approxPolyDP(contour, currError, True)
+
+        if (len(polygon) == 4):
+            return polygon
+        elif (len(polygon) > 4):
+            minError = currError
+            currError = (currError + maxError) / 2
+        else:
+            maxError = currError
+            currError = (minError + currError) / 2
+        iters += 1
+
+    #didn't win, so drop to minError and get quad from intersections of 4 longest sides
+    #todo
+
+    return []    
+
+def getQuadsFromContoursPoly(contours):
+    quads = []
     for contour in contours:
-        rects.append(cv2.approxPolyDP(contour, 0.1, True))
-    return rects
+        quad = getQuadFromContourPoly(contour)
+        if len(quad) == 4:
+            quads.append(quad)
+    return quads
+
+def getQuadFromContourHough(contour):
+    contourImage = np.zeros(imageSize)
+    cv2.drawContours(contourImage, contour, -1, 1)
+    lines = cv2.HoughLinesP(contourImage, 1, math.pi/180, 80)
+    print lines
+
+
+def getRectsFromQuads(quads):
+    return quads
 
 def main():
     origImage = cv2.imread("sampleSetImage.jpg")
@@ -40,14 +79,17 @@ def main():
     showImage(cannyEdges)
 
     cardContours = getParentContours(cannyEdges)
-    contourImage = np.zeros(cannyEdges.shape)
-    cv2.drawContours(contourImage, cardContours, -1, 1)
-    showImage(contourImage)
+    #contourImage = np.zeros(cannyEdges.shape)
+    #cv2.drawContours(contourImage, cardContours, -1, 1)
+    #showImage(contourImage)
 
-    cardRects = getRectsFromContours(cardContours)
+    cardQuads = getQuadsFromContoursPoly(cardContours)
+    cardRects = getRectsFromQuads(cardQuads)
 
-    cv2.fillPoly(origImage, cardRects, (255,0,0))
-    showImage(origImage, "bla")
+    
+    cv2.polylines(origImage, cardRects, True, (255,0,0),3)
+    showImage(origImage, "BLA")
+
 
 
 if __name__ == "__main__":
