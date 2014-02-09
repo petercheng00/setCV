@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import math
+from card import Card
 
 # webcam index
 # -1 means auto select
@@ -29,6 +30,7 @@ def getParentContours(bwImage):
 
 # Try approxPolyDP with multiple errors until we receive
 # a polygon with 4 sides
+# TODO: Instead of getting polygon with 4 sides, get polygon with most sides where 4 longest sides are significantly longer than all other sides. For some reason this seems to be way more accurate
 def getQuadFromContourPoly(contour):
     iters = 0
     maxIters = 100
@@ -50,7 +52,6 @@ def getQuadFromContourPoly(contour):
 
     #didn't win, so drop to minError and get quad from intersections of 4 longest sides
     #todo
-
     return []    
 
 def getQuadsFromContoursPoly(contours):
@@ -61,37 +62,60 @@ def getQuadsFromContoursPoly(contours):
             quads.append(quad)
     return quads
 
-def getQuadFromContourHough(contour):
-    contourImage = np.zeros(imageSize)
-    cv2.drawContours(contourImage, contour, -1, 1)
-    lines = cv2.HoughLinesP(contourImage, 1, math.pi/180, 80)
-    print lines
+def getQuadFromContourHough(contourImage):
+    lines = cv2.HoughLinesP(contourImage, 1, np.pi/180, 70, minLineLength=30, maxLineGap=10)
+    if lines != None:
+        for x1,y1,x2,y2 in lines[0]:
+            cv2.line(contourImage, (x1, y1), (x2, y2), 255,5)
+    showImage(contourImage)
+
+    #lines = cv2.HoughLines(contourImage, 1, 0.5*np.pi/180, 50)
+    #for line in lines[0]:
+    #    rho = line[0]
+    #    theta = line[1]
+    #    a = math.cos(theta)
+    #    b = math.sin(theta)
+    #    x0 = a*rho
+    #    y0 = b*rho
+    #    x1 = int(x0+1000*(-b))
+    #    y1 = int(y0+1000*a)
+    #    x2 = int(x0-1000*(-b))
+    #    y2 = int(y0-1000*a)
+    #    cv2.line(contourImage, (x1, y1), (x2, y2), 255, 1)
+    #showImage(contourImage)
 
 
-def getRectsFromQuads(quads):
+    return [1,1,1,1]
+
+def getQuadsFromContoursHough(contours, image):
+    quads = []
+    for i in xrange(len(contours)):
+        image[:,:,:] = 0
+        cv2.drawContours(image, contours, i, 255)
+        showImage(image)
+        quad = getQuadFromContourHough(image)
+        if len(quad) == 4:
+            quads.append(quad)
     return quads
 
 def main():
     origImage = cv2.imread("sampleSetImage.jpg")
-    showImage(origImage)
+    showImage(origImage, 'orig')
 
     cannyEdges = getEdges(origImage)
     showImage(cannyEdges)
 
     cardContours = getParentContours(cannyEdges)
-    #contourImage = np.zeros(cannyEdges.shape)
-    #cv2.drawContours(contourImage, cardContours, -1, 1)
-    #showImage(contourImage)
 
+    #cardQuads = getQuadsFromContoursHough(cardContours, np.zeros((cannyEdges.shape[0], cannyEdges.shape[1],1), np.uint8))
     cardQuads = getQuadsFromContoursPoly(cardContours)
-    cardRects = getRectsFromQuads(cardQuads)
 
-    
-    cv2.polylines(origImage, cardRects, True, (255,0,0),3)
-    showImage(origImage, "BLA")
-
-
-
+    id = 0
+    for quad in cardQuads:
+        card = Card(id)
+        card.setImage(origImage, quad)
+        id += 1
+        showImage(card.image, str(card.id))
 if __name__ == "__main__":
     main()
 
