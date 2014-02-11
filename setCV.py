@@ -19,14 +19,16 @@ def getEdges(image):
     bwImage = cv2.cvtColor(blurImage, cv2.COLOR_BGR2GRAY)
     return cv2.Canny(bwImage,100,200)
     
-def getParentContours(bwImage):
-    contours, hierarchy = cv2.findContours(bwImage,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+def getParentContours(contours, hierarchy):
     cardContours = []
+    indices = []
+    hierarchy = hierarchy[0]
     for i in xrange(len(contours)):
         # contour must have no parent, and must have at least 1 child
-        if (hierarchy[0][i][3] == -1 and hierarchy[0][i][2] != -1):
+        if (hierarchy[i][3] == -1 and hierarchy[i][2] != -1):
             cardContours.append(contours[i])
-    return cardContours
+            indices.append(i)
+    return (cardContours, indices)
 
 # Try approxPolyDP with multiple errors until we receive
 # a polygon with 4 sides
@@ -98,6 +100,15 @@ def getQuadsFromContoursHough(contours, image):
             quads.append(quad)
     return quads
 
+def createCards(cardQuads, origImage):
+    cards = []
+    id = 0
+    for quad in cardQuads:
+        card = Card(id, origImage, quad)
+        cards.append(card)
+        id += 1
+    return cards
+
 def main():
     origImage = cv2.imread("sampleSetImage.jpg")
     showImage(origImage, 'orig')
@@ -105,17 +116,16 @@ def main():
     cannyEdges = getEdges(origImage)
     showImage(cannyEdges)
 
-    cardContours = getParentContours(cannyEdges)
+    contours, hierarchy = cv2.findContours(cannyEdges,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+    (cardContours, indices) = getParentContours(contours, hierarchy)
 
-    #cardQuads = getQuadsFromContoursHough(cardContours, np.zeros((cannyEdges.shape[0], cannyEdges.shape[1],1), np.uint8))
     cardQuads = getQuadsFromContoursPoly(cardContours)
 
-    id = 0
-    for quad in cardQuads:
-        card = Card(id)
-        card.setImage(origImage, quad)
-        id += 1
-        showImage(card.image, str(card.id))
+    cards = createCards(cardQuads, origImage)
+    for card in cards:
+        showImage(card.image)
+
+
 if __name__ == "__main__":
     main()
 
