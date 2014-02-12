@@ -122,8 +122,16 @@ def main():
     cardQuads = getQuadsFromContoursPoly(cardContours)
 
     cards = createCards(cardQuads, origImage)
-    for card in cards:
-        showImage(card.image)
+
+    card1 = cards[0]
+    for card2 in cards:
+        diff = cv2.compareHist(card1.hueHistogram, card2.hueHistogram, 0)
+        print diff
+    showImage(card1.image)
+    showImage(cards[1].image)
+    showImage(cards[3].image)
+    showImage(cards[4].image)
+            
 
 
 if __name__ == "__main__":

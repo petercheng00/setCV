@@ -17,14 +17,10 @@ class Card:
         self.image = self.getImage(origImage)
 
         # Attributes
-        self.color = self.getColor()
+        self.hueHistogram = self.getHueHistogram()
         self.count = None
         self.shape = None
         self.fill = None
-
-
-
-
 
         
     # Set coordinates. Assume coordinates are passed in
@@ -45,8 +41,12 @@ class Card:
         transform = cv2.getPerspectiveTransform(self.origCoords.astype(np.float32), dstPoints)
         return cv2.warpPerspective(origImage, transform, (w, h))
 
-# convert to HSV get histogram    
-def getColor(self):
-        pass
+    # convert to HSV get histogram    
+    def getHueHistogram(self):
+        hsvImage = cv2.cvtColor(self.image, cv2.COLOR_BGR2HSV)
+        hueHist = cv2.calcHist(hsvImage, [0], None, [180], [0,180]) 
+        cv2.normalize(hueHist,hueHist,0,1,cv2.NORM_MINMAX)
+        return hueHist
+
         
 
