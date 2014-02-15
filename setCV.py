@@ -2,7 +2,8 @@ import cv2
 import numpy as np
 import math
 from card import Card
-from matplotlib import pyplot as plt
+import constants
+from sets import Set
 
 # webcam index
 # -1 means auto select
@@ -108,6 +109,34 @@ def createCards(cardQuads, origImage):
         id += 1
     return cards
 
+def matchCardColors(cards):
+    unmatched = list(xrange(len(cards)))
+    matched = []
+
+    while len(unmatched) > 0:
+        i = unmatched.pop(0)
+        newColor = [i]
+        
+        hist1 = cards[i].hueSatHistogram
+        for j in reversed(unmatched):
+            hist2 = cards[j].hueSatHistogram
+            # compute histogram correlation
+            histDiff = cv2.compareHist(hist1, hist2, 0)
+            if histDiff > constants.color_similarity_threshold:
+                newColor.append(j)
+                unmatched.remove(j)
+        matched.append(newColor)
+
+    matchedSets = []
+    for match in matched:
+        matchedSets.append(set(match))
+
+def matchCards(cards):
+    return (matchCardColors(cards),
+            [],
+            [],
+            [])
+
 def main():
     origImage = cv2.imread("sample.jpg")        
     hsvImage = cv2.cvtColor(origImage, cv2.COLOR_BGR2HSV)
@@ -123,14 +152,7 @@ def main():
 
     cards = createCards(cardQuads, origImage)
 
-    card1 = cards[0]
-    showImage(card1.image, 'im1')
-    showImage(card1.hueSatHistogram, 'hist1')
-    for card2 in cards:
-        diff = cv2.compareHist(card1.hueSatHistogram, card2.hueSatHistogram, 0)
-        print diff
-        showImage(card2.image, 'im2')
-        showImage(card2.hueSatHistogram, 'hist2')
+    (colorDict, shapeDict, countDict, fillDict) = matchCards(cards)
             
 
 

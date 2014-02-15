@@ -20,7 +20,7 @@ class Card:
         self.image = self.getImage(origImage)
 
         # Attributes
-        self.hueHistogram = self.getHueHistogram()
+        # self.hueHistogram = self.getHueHistogram()
         self.hueSatHistogram = self.getHueSatHistogram()
         self.count = None
         self.shape = None
