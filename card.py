@@ -1,8 +1,7 @@
 import numpy as np
 import cv2
-import random
-import time
-from matplotlib import pyplot as plt
+from histogram import *
+from features import *
 
 class Card:
     # resolution to use for card size. could be tweaked
@@ -20,9 +19,9 @@ class Card:
         self.image = self.getImage(origImage)
 
         # Attributes
-        # self.hueHistogram = self.getHueHistogram()
-        self.hueSatHistogram = self.getHueSatHistogram()
-        self.count = None
+        # self.hueHistogram = getHueHistogram(self.image)
+        self.hueSatHistogram = getHueSatHistogram(self.image)
+        self.count = getParentContoursCount(self.image)
         self.shape = None
         self.fill = None
 
@@ -45,17 +44,3 @@ class Card:
         transform = cv2.getPerspectiveTransform(self.origCoords.astype(np.float32), dstPoints)
         return cv2.warpPerspective(origImage, transform, (w, h))
 
-    # convert to HSV get histogram on hue
-    def getHueHistogram(self):
-        hsvImage = cv2.cvtColor(self.image, cv2.COLOR_BGR2HSV)
-        hueHist = cv2.calcHist([hsvImage], [0], None, [180], [0,180]) 
-        return hueHist
-
-    # convert to HSV get 2d histogram on hue and saturation
-    def getHueSatHistogram(self):
-        hsvImage = cv2.cvtColor(self.image, cv2.COLOR_BGR2HSV)
-        hueSatHist = cv2.calcHist([hsvImage], [0,1], None, [180,256], [0,180, 0,256])
-
-        # remove low saturation which corresponds to white
-        hueSatHist[:,0:50] = 0
-        return hueSatHist
