@@ -2,15 +2,14 @@ import cv2
 import numpy as np
 import math
 from card import Card
+from matplotlib import pyplot as plt
 
 # webcam index
 # -1 means auto select
 camIndex = -1
 
-# window names
-SOURCE = "source"
 
-def showImage(im, name=SOURCE):
+def showImage(im, name):
     cv2.imshow(name, im)
     cv2.waitKey()
 
@@ -110,18 +109,12 @@ def createCards(cardQuads, origImage):
     return cards
 
 def main():
-    origImage = cv2.imread("sampleSetImage.jpg")
-        
+    origImage = cv2.imread("sample.jpg")        
     hsvImage = cv2.cvtColor(origImage, cv2.COLOR_BGR2HSV)
-    hueSatHist = cv2.calcHist(hsvImage, [0,1], None, [180,256], [0,180, 0,256])
-    cv2.normalize(hueSatHist,hueSatHist,0,1,cv2.NORM_MINMAX)
-    showImage(hueSatHist)
-
-
     showImage(origImage, 'orig')
 
     cannyEdges = getEdges(origImage)
-    showImage(cannyEdges)
+    #showImage(cannyEdges)
 
     contours, hierarchy = cv2.findContours(cannyEdges,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
     (cardContours, indices) = getParentContours(contours, hierarchy)
@@ -131,16 +124,18 @@ def main():
     cards = createCards(cardQuads, origImage)
 
     card1 = cards[0]
+    showImage(card1.image, 'im1')
+    showImage(card1.hueSatHistogram, 'hist1')
     for card2 in cards:
-        showImage(card2.image)
-        diff = cv2.compareHist(card1.hueHistogram, card2.hueHistogram, 0)
+        diff = cv2.compareHist(card1.hueSatHistogram, card2.hueSatHistogram, 0)
         print diff
+        showImage(card2.image, 'im2')
+        showImage(card2.hueSatHistogram, 'hist2')
             
 
 
 if __name__ == "__main__":
     main()
-
 
 def webcam():
     cv2.namedWindow(SOURCE)

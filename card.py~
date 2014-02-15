@@ -1,0 +1,12 @@
+class Card:
+    def __init__(self):
+        #Attributes
+        self.color = None
+        self.shape = None
+        self.count = None
+        self.fill = None
+
+        #Image
+        self.image = None
+        self.origCoords = None
+        
