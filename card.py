@@ -1,5 +1,7 @@
 import numpy as np
 import cv2
+import random
+import time
 
 class Card:
     # resolution to use for card size. could be tweaked
@@ -18,6 +20,7 @@ class Card:
 
         # Attributes
         self.hueHistogram = self.getHueHistogram()
+        self.hueSatHistogram = self.getHueSatHistogram()
         self.count = None
         self.shape = None
         self.fill = None
@@ -41,12 +44,22 @@ class Card:
         transform = cv2.getPerspectiveTransform(self.origCoords.astype(np.float32), dstPoints)
         return cv2.warpPerspective(origImage, transform, (w, h))
 
-    # convert to HSV get histogram    
+    # convert to HSV get histogram on hue
     def getHueHistogram(self):
+        random.seed(time.time())
+        if self.id % 2 == 0:
+            self.image[:,:] = (random.randint(150,255),0,0)
+        else:
+            self.image[:,:] = (random.randint(150,255),0,0)
         hsvImage = cv2.cvtColor(self.image, cv2.COLOR_BGR2HSV)
         hueHist = cv2.calcHist(hsvImage, [0], None, [180], [0,180]) 
         cv2.normalize(hueHist,hueHist,0,1,cv2.NORM_MINMAX)
         return hueHist
 
-        
-
+    # convert to HSV get 2d histogram on hue and saturation
+    def getHueSatHistogram(self):
+        hsvImage = cv2.cvtColor(self.image, cv2.COLOR_BGR2HSV)
+        hueSatHist = cv2.calcHist(hsvImage, [0,1], None, [180,256], [0,180, 0,256])
+        hueSatHist[:][0:30] = 0
+        cv2.normalize(hueSatHist,hueSatHist,0,1,cv2.NORM_MINMAX)
+        return hueSatHist

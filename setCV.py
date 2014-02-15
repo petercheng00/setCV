@@ -111,6 +111,13 @@ def createCards(cardQuads, origImage):
 
 def main():
     origImage = cv2.imread("sampleSetImage.jpg")
+        
+    hsvImage = cv2.cvtColor(origImage, cv2.COLOR_BGR2HSV)
+    hueSatHist = cv2.calcHist(hsvImage, [0,1], None, [180,256], [0,180, 0,256])
+    cv2.normalize(hueSatHist,hueSatHist,0,1,cv2.NORM_MINMAX)
+    showImage(hueSatHist)
+
+
     showImage(origImage, 'orig')
 
     cannyEdges = getEdges(origImage)
@@ -125,12 +132,9 @@ def main():
 
     card1 = cards[0]
     for card2 in cards:
+        showImage(card2.image)
         diff = cv2.compareHist(card1.hueHistogram, card2.hueHistogram, 0)
         print diff
-    showImage(card1.image)
-    showImage(cards[1].image)
-    showImage(cards[3].image)
-    showImage(cards[4].image)
             
 
 
