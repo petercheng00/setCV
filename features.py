@@ -112,11 +112,30 @@ def getParentContoursShapeAndCount(image):
     # high blur + high detection rate for canny to get only really strong edges
     cannyEdges = getEdges(image, blur=15, threshold1=10, threshold2=30)
     # dilate so that contours are continous at sharp corners
-    cannyEdges  = cv2.dilate(cannyEdges, np.ones((3,3),np.uint8))
-    contours, hierarchy = cv2.findContours(cannyEdges,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+    #showImage(cannyEdges, 'before')
+    #cannyEdges  = cv2.dilate(cannyEdges, np.ones((7,7),np.uint8))
+    cannyEdges = cv2.morphologyEx(cannyEdges, cv2.MORPH_CLOSE, np.ones((15,15),np.uint8))
+    #showImage(cannyEdges, 'after')
+    
+    contours, hierarchy = cv2.findContours(cannyEdges,cv2.RETR_TREE,cv2.CHAIN_APPROX_NONE)
     (cardContours, indices) = getParentContours(contours, hierarchy, childRequired=True)
 
+
+    image1 = np.zeros((image.shape[0],image.shape[1],3), np.uint8)
+    cv2.drawContours(image1, contours, -1, [0,0,255])
+    #showImage(image1, 'contours1')
+
+    cv2.drawContours(image1, cardContours, -1, [255,0,0])
+    #showImage(image1, 'contours2')
+
+    cv2.drawContours(image1, [cardContours[0]], -1, [0,255,0])
+    #showImage(image1, 'contours3')
+
+
     contour = cardContours[0]
+
+    # Hu-moments are translation invariant, so this isn't necessary
+    # at the moment. Nice for visualization though
     minX = min(contour[:,0,0])
     minY = min(contour[:,0,1])
     contour -= [minX, minY]
