@@ -29,6 +29,15 @@ def sameCardCount(count1, count2):
 
 def sameCardShape(shape1, shape2):
     val = cv2.matchShapes(shape1, shape2, 1, 0.0)
+    print val
+
+    image1 = np.zeros((500,500,3), np.uint8)
+    cv2.drawContours(image1, [shape1], 0, 255)
+    showImage(image1, 'contour1', wait=False)
+    image2 = np.zeros((500,500,3), np.uint8)
+    cv2.drawContours(image2, [shape2], 0, 255)
+    showImage(image2, 'contour2')
+
     return val < constants.shape_similarity_threshold
 
 

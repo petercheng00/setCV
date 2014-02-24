@@ -115,11 +115,10 @@ def getParentContoursShapeAndCount(image):
     cannyEdges  = cv2.dilate(cannyEdges, np.ones((3,3),np.uint8))
     contours, hierarchy = cv2.findContours(cannyEdges,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
     (cardContours, indices) = getParentContours(contours, hierarchy, childRequired=True)
-    #image[:,:,:] = 0
-    #cv2.drawContours(image, contours, -1, 255)
-    #showImage(image, 'contour')
-    #image[:,:,:] = 0
-    #cv2.drawContours(image, cardContours, -1, 255)
-    #showImage(image, 'parents')
-    print cardContours[0].shape
-    return (cardContours[0],len(cardContours))
+
+    contour = cardContours[0]
+    minX = min(contour[:,0,0])
+    minY = min(contour[:,0,1])
+    contour -= [minX, minY]
+
+    return (contour,len(cardContours))
