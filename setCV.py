@@ -20,45 +20,50 @@ def createCards(cardQuads, origImage):
         id += 1
     return cards
 
-def matchCardColors(cards):
+def sameCardColor(hist1, hist2):
+    histDiff = cv2.compareHist(hist1, hist2, 0)
+    return histDiff > constants.color_similarity_threshold
+
+def sameCardCount(count1, count2):
+    return count1 == count2
+
+def sameCardShape(shape1, shape2):
+    val = cv2.matchShapes(shape1, shape2, 1, 0.0)
+    return val < constants.shape_similarity_threshold
+
+
+def matchCardAttributes(cards, attribute, equalityTest):
     unmatched = list(xrange(len(cards)))
     matched = []
 
     while len(unmatched) > 0:
         i = unmatched.pop(0)
-        newColor = [i]
-        hist1 = cards[i].hueSatHistogram
+        newSet = [i]
+        value1 = getattr(cards[i], attribute)
         for j in reversed(unmatched):
-            hist2 = cards[j].hueSatHistogram
-            # compute histogram correlation
-            histDiff = cv2.compareHist(hist1, hist2, 0)
-            if histDiff > constants.color_similarity_threshold:
-                newColor.append(j)
+            value2 = getattr(cards[j], attribute)
+            if equalityTest(value1, value2):
+                newSet.append(j)
                 unmatched.remove(j)
-        matched.append(newColor)
+        matched.append(newSet)
 
     matchedSets = []
     for match in matched:
         matchedSets.append(set(match))
     return matchedSets
 
-def matchCardCounts(cards):
-    counts = []
-    for card in cards:
-        counts.append(card.count)
-
 def matchCards(cards):
-    return (matchCardColors(cards),
-            matchCardCounts(cards),
-            [],
+    return (matchCardAttributes(cards, 'color', sameCardColor),
+            matchCardAttributes(cards, 'count', sameCardCount),
+            matchCardAttributes(cards, 'shape', sameCardShape),
             [])
 
 def main():
     origImage = cv2.imread("sample.jpg")        
-    showImage(origImage, 'orig')
+    #showImage(origImage, 'orig')
 
     cannyEdges = getEdges(origImage)
-    showImage(cannyEdges, 'canny')
+    #showImage(cannyEdges, 'canny')
 
     contours, hierarchy = cv2.findContours(cannyEdges,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
     (cardContours, indices) = getParentContours(contours, hierarchy, childRequired = True)
@@ -68,9 +73,15 @@ def main():
     cards = createCards(cardQuads, origImage)
 
     (colorDict, countDict, shapeDict, fillDict) = matchCards(cards)
+    print 'colors'
     print colorDict
+    print 'counts'
     print countDict
-            
+    print 'shapes'
+    print shapeDict
+    
+    #for card in cards:
+    #    showImage(card.image, 'asdf')
 
 
 if __name__ == "__main__":

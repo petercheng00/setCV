@@ -2,6 +2,7 @@ import numpy as np
 import cv2
 from histogram import *
 from features import *
+from common import *
 
 class Card:
     # resolution to use for card size. could be tweaked
@@ -20,9 +21,8 @@ class Card:
 
         # Attributes
         # self.hueHistogram = getHueHistogram(self.image)
-        self.hueSatHistogram = getHueSatHistogram(self.image)
-        self.count = getParentContoursCount(self.image)
-        self.shape = None
+        self.color = getHueSatHistogram(self.image)
+        (self.shape, self.count) = getParentContoursShapeAndCount(self.image)
         self.fill = None
 
         

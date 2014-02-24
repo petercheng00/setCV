@@ -3,6 +3,7 @@
 ##
 
 import cv2
+import numpy as np
 from common import *
 
 # Return binary Canny-edge-detected image
@@ -11,8 +12,11 @@ def getEdges(image, blur=3, threshold1=100, threshold2=200):
         blurImage = cv2.GaussianBlur(image, (blur,blur), 0)
     else:
         blurImage = image.copy()
+    #showImage(blurImage, 'blur')
     bwImage = cv2.cvtColor(blurImage, cv2.COLOR_BGR2GRAY)
-    return cv2.Canny(bwImage,threshold1,threshold2)
+    cannyImage = cv2.Canny(bwImage,threshold1,threshold2)
+    #showImage(cannyImage, 'canny')
+    return cannyImage
 
 # Return all contours that have no parents and have at least one child
 def getParentContours(contours, hierarchy, childRequired=False):
@@ -104,16 +108,18 @@ def getQuadsFromContoursHough(contours, image):
     return quads
 
 
-def getParentContoursCount(image):
-    cannyEdges = getEdges(image, blur=5, threshold1=50, threshold2=150)
+def getParentContoursShapeAndCount(image):
+    # high blur + high detection rate for canny to get only really strong edges
+    cannyEdges = getEdges(image, blur=15, threshold1=10, threshold2=30)
+    # dilate so that contours are continous at sharp corners
+    cannyEdges  = cv2.dilate(cannyEdges, np.ones((3,3),np.uint8))
     contours, hierarchy = cv2.findContours(cannyEdges,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
     (cardContours, indices) = getParentContours(contours, hierarchy, childRequired=True)
-    showImage(image, 'image')
-    showImage(cannyEdges, 'edges')
-    image[:,:,:] = 0
-    cv2.drawContours(image, contours, -1, 255)
-    showImage(image, 'contour')
-    image[:,:,:] = 0
-    cv2.drawContours(image, cardContours, -1, 255)
-    showImage(image, 'parents')
-    return len(cardContours)
+    #image[:,:,:] = 0
+    #cv2.drawContours(image, contours, -1, 255)
+    #showImage(image, 'contour')
+    #image[:,:,:] = 0
+    #cv2.drawContours(image, cardContours, -1, 255)
+    #showImage(image, 'parents')
+    print cardContours[0].shape
+    return (cardContours[0],len(cardContours))

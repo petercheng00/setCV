@@ -1,0 +1,27 @@
+SetCV : Detecting cards with OpenCV in Python
+
+Intro
+
+SetCV is a little project I've had in the back of my head for a while now, and this page will document how I go about building it, and hopefully provide some value to people like me who've spent too much time searching random webpages not unlike this one for snippets of useful code. The basic idea of SetCV is that given a picture (ideally a video stream), of Set cards in any orientation or layout, the program will visually depict which cards together form a valid set.
+
+In the following guide, I'll aim to highlight useful pieces of code, and try to avoid focusing too much on computer vision details. In the course of implementing this project, my focus will be on creating a system that is (reasonably) simple, and I'll probably stick to using the first idea that works rather than the best or even most proper solution.
+
+This project will be built using OpenCV 2.4.6 on Python 2.7. I'm pretty familiar with OpenCV in C++, but in setting up this project, I have discovered that OpenCV Python documentation is quite lacking (examples are pretty good, but tedious to search through), so perhaps this will help get people set up as well. I'll be developing on my beefy Windows gaming desktop at home, as well as my Ubuntu x120e netbook while out, so this should ensure my code is runnable on at least two platforms, and that its not reliant on a high-power system.
+
+What is Set?
+
+Before we get started though, let's take a look at Set, the card game. Set, at its core is a pattern-recognition game. The basic idea is that each Set card has 4 attributes: Shape, Color, Fill, and Count. To win the game, you must be quick at noticing "sets" of cards. A set consists of 3 cards, such that for each attribute, either all 3 cards have the same value within that attribute, or all 3 cards have different values within that attribute. If you think of each attribute as a dimension, you essentially want a set of cards that forms a straight or a diagonal line within that 4-d space.
+
+Some Planning
+
+As a human, it is simple to pick out what the 4 attributes for any given card are. The tricky part comes when multiple cards and their attributes must be juggled in the brain. For a computer though, brute forcing all combinations of 3 cards is trivially quick (typically there are 12-15 cards visible at a time), whereas recognizing what each card is is the more interesting subject. One trivially simple way to identify each card would be to simply store a photo of each card internally, and compare against that database. This however means that new cards can't be introduced. While it's unlikely a Set v2 will be made (Chess 2 anybody?), I like to try and keep my programs as general as possible. With that in mind, let's go over some assumptions that we will stick with:
+
+Set Assumptions and Goals
+
+All cards are rectangles (can be seen at an angle though)
+All cards are unoccluded
+All cards have clearly visible borders (i.e. background is clearly different from card background)
+4 standard attributes will be checked (Each attribute needs some dedicated code to identify it)
+Values for each attribute will be unconstrained mostly (If a new shape is seen, it should be treated as a 4th shape)
+Needs to run fast enough to process in real time. (Hopefully one day on a smartphone)
+
