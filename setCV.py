@@ -28,17 +28,26 @@ def sameCardCount(count1, count2):
     return count1 == count2
 
 def sameCardShape(shape1, shape2):
-    val = cv2.matchShapes(shape1, shape2, 1, 0.0)
-    print val
+    #val = cv2.matchShapes(shape1, shape2, 1, 0.0)
+    #print val
+    maxX = max(max(shape1[:,0,0]), max(shape2[:,0,0]))
+    maxY = max(max(shape1[:,0,1]), max(shape2[:,0,1]))
 
-    image1 = np.zeros((200,400,3), np.uint8)
+    image1 = np.zeros((maxY,maxX), np.uint8)
     cv2.drawContours(image1, [shape1], 0, 255)
-    showImage(image1, 'contour1', wait=False)
-    image2 = np.zeros((200,400,3), np.uint8)
-    cv2.drawContours(image2, [shape2], 0, 255)
-    showImage(image2, 'contour2')
+    image1 = cv2.dilate(image1, np.ones((7,7), np.uint8))
+    #showImage(image1, 'contour1', wait=False)
 
-    return val < constants.shape_similarity_threshold
+    image2 = np.zeros((maxY,maxX), np.uint8)
+    cv2.drawContours(image2, [shape2], 0, 255)
+    image2 = cv2.dilate(image2, np.ones((7,7), np.uint8))
+    #showImage(image2, 'contour2', wait=False)
+
+
+    intersectImage = cv2.bitwise_and(image1, image2)
+    #showImage(image3, 'and')
+
+    return cv2.countNonZero(intersectImage) > constants.shape_similarity_threshold
 
 
 def matchCardAttributes(cards, attribute, equalityTest):
