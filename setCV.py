@@ -1,8 +1,9 @@
 import cv2
 import numpy as np
 import math
-import constants
+import itertools
 
+import constants
 from card import Card
 from features import *
 from sets import Set
@@ -74,7 +75,7 @@ def matchCardAttributes(cards, attribute, equalityTest):
 
     matchedSets = []
     for match in matched:
-        matchedSets.append(set(match))
+        matchedSets.append(frozenset(match))
     return matchedSets
 
 def matchCards(cards):
@@ -82,6 +83,32 @@ def matchCards(cards):
             matchCardAttributes(cards, 'count', sameCardCount),
             matchCardAttributes(cards, 'shape', sameCardShape),
             matchCardAttributes(cards, 'fillPct', sameCardFill))
+
+def isSet(cardIds, matchSets):
+    for matchSet in matchSets:
+
+        def findSet(item):
+            for mSet in matchSet:
+                if item in mSet:
+                    return mSet
+            return None
+
+        cardSets = map(findSet, cardIds)
+        if all(cs == cardSets[0] for cs in cardSets):
+            continue
+        if len(cardSets) == len(set(cardSets)):
+            continue
+        return False
+    return True
+            
+
+def getSets(cards, matchSets):
+    sets = []
+    for combination in itertools.combinations(cards,3):
+        cardIds = map(lambda x:x.id, combination)
+        if isSet(cardIds, matchSets):
+            sets.append(combination)
+    return sets
 
 def main():
     origImage = cv2.imread("sample.jpg")        
@@ -98,17 +125,20 @@ def main():
     cards = createCards(cardQuads, origImage)
 
     (colorDict, countDict, shapeDict, fillDict) = matchCards(cards)
-    print 'colors'
-    print colorDict
-    print 'counts'
-    print countDict
-    print 'shapes'
-    print shapeDict
-    print 'fills'
-    print fillDict
+    #print 'colors'
+    #print colorDict
+    #print 'counts'
+    #print countDict
+    #print 'shapes'
+    #print shapeDict
+    #print 'fills'
+    #print fillDict
     
+    cardSets = getSets(cards, (colorDict, countDict, shapeDict, fillDict))
+    for cardSet in cardSets:
+        print map(lambda x:x.id, cardSet)
     for card in cards:
-        showImage(card.image, 'asdf')
+        showImage(card.image, str(card.id))
 
 
 if __name__ == "__main__":
