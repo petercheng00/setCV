@@ -3,7 +3,7 @@ import sys
 
 # Show image in the window with the specified name
 # If window does not exist, will be created
-def showImage(im, name, wait=True):
+def showImage(im, name='image', wait=True):
     sys.stdout.flush()
     cv2.imshow(name, im)
     if wait:

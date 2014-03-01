@@ -30,25 +30,32 @@ def sameCardCount(count1, count2):
 def sameCardShape(shape1, shape2):
     #val = cv2.matchShapes(shape1, shape2, 1, 0.0)
     #print val
-    maxX = max(max(shape1[:,0,0]), max(shape2[:,0,0]))
-    maxY = max(max(shape1[:,0,1]), max(shape2[:,0,1]))
+    (maxX1, maxY1) = (max(shape1[:,0,0]), max(shape1[:,0,1]))
+    (minX1, minY1) = (min(shape1[:,0,0]), min(shape1[:,0,1]))
+    (maxX2, maxY2) = (max(shape2[:,0,0]), max(shape2[:,0,1]))
+    (minX2, minY2) = (min(shape2[:,0,0]), min(shape2[:,0,1]))
 
-    image1 = np.zeros((maxY,maxX), np.uint8)
-    cv2.drawContours(image1, [shape1], 0, 255)
+    maxXDiff = max(maxX1 - minX1, maxX2 - minX2)
+    maxYDiff = max(maxY1 - minY1, maxY2 - minY2)
+
+    image1 = np.zeros((maxYDiff,maxXDiff), np.uint8)
+    cv2.drawContours(image1, [shape1], 0, 255, offset=(-minX1, -minY1))
     image1 = cv2.dilate(image1, np.ones((7,7), np.uint8))
     #showImage(image1, 'contour1', wait=False)
 
-    image2 = np.zeros((maxY,maxX), np.uint8)
-    cv2.drawContours(image2, [shape2], 0, 255)
+    image2 = np.zeros((maxYDiff,maxXDiff), np.uint8)
+    cv2.drawContours(image2, [shape2], 0, 255, offset=(-minX2, -minY2))
     image2 = cv2.dilate(image2, np.ones((7,7), np.uint8))
     #showImage(image2, 'contour2', wait=False)
 
 
     intersectImage = cv2.bitwise_and(image1, image2)
-    #showImage(image3, 'and')
+    #showImage(intersectImage, 'and')
 
     return cv2.countNonZero(intersectImage) > constants.shape_similarity_threshold
 
+def sameCardFill(fillPct1, fillPct2):
+    return constants.getFillAmount(fillPct1) == constants.getFillAmount(fillPct2)
 
 def matchCardAttributes(cards, attribute, equalityTest):
     unmatched = list(xrange(len(cards)))
@@ -74,7 +81,7 @@ def matchCards(cards):
     return (matchCardAttributes(cards, 'color', sameCardColor),
             matchCardAttributes(cards, 'count', sameCardCount),
             matchCardAttributes(cards, 'shape', sameCardShape),
-            [])
+            matchCardAttributes(cards, 'fillPct', sameCardFill))
 
 def main():
     origImage = cv2.imread("sample.jpg")        
@@ -97,9 +104,11 @@ def main():
     print countDict
     print 'shapes'
     print shapeDict
+    print 'fills'
+    print fillDict
     
-    #for card in cards:
-    #    showImage(card.image, 'asdf')
+    for card in cards:
+        showImage(card.image, 'asdf')
 
 
 if __name__ == "__main__":

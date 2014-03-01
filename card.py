@@ -22,8 +22,9 @@ class Card:
         # Attributes
         # self.hueHistogram = getHueHistogram(self.image)
         self.color = getHueSatHistogram(self.image)
-        (self.shape, self.count) = getParentContoursShapeAndCount(self.image)
-        self.fill = None
+        (self.shapes, self.count) = getParentContoursShapesAndCount(self.image)
+        self.shape = self.shapes[0]
+        self.fillPct = getFillPct(self.image, self.shape)
 
         
     # Set coordinates. Assume coordinates are passed in

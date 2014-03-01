@@ -108,7 +108,7 @@ def getQuadsFromContoursHough(contours, image):
     return quads
 
 
-def getParentContoursShapeAndCount(image):
+def getParentContoursShapesAndCount(image):
     # high blur + high detection rate for canny to get only really strong edges
     cannyEdges = getEdges(image, blur=15, threshold1=10, threshold2=30)
     # dilate so that contours are continous at sharp corners
@@ -121,23 +121,29 @@ def getParentContoursShapeAndCount(image):
     (cardContours, indices) = getParentContours(contours, hierarchy, childRequired=True)
 
 
-    image1 = np.zeros((image.shape[0],image.shape[1],3), np.uint8)
-    cv2.drawContours(image1, contours, -1, [0,0,255])
+    #image1 = np.zeros((image.shape[0],image.shape[1],3), np.uint8)
+    #cv2.drawContours(image1, contours, -1, [0,0,255])
     #showImage(image1, 'contours1')
 
-    cv2.drawContours(image1, cardContours, -1, [255,0,0])
+    #cv2.drawContours(image1, cardContours, -1, [255,0,0])
     #showImage(image1, 'contours2')
 
-    cv2.drawContours(image1, [cardContours[0]], -1, [0,255,0])
+    #cv2.drawContours(image1, [cardContours[0]], -1, [0,255,0])
     #showImage(image1, 'contours3')
 
+    return (cardContours,len(cardContours))
 
-    contour = cardContours[0]
+def getFillPct(image, contour):
+    mask = np.zeros((image.shape[0],image.shape[1]), np.uint8)
+    cv2.drawContours(mask, [contour], 0, 255, thickness=-1)
 
-    # Hu-moments are translation invariant, so this isn't necessary
-    # at the moment. Nice for visualization though
-    minX = min(contour[:,0,0])
-    minY = min(contour[:,0,1])
-    contour -= [minX, minY]
+    bwImage = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    bwImage = cv2.adaptiveThreshold(bwImage, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, 111, 2)
+    #bwImage = cv2.threshold(bwImage, 180, 255, cv2.THRESH_BINARY_INV)[1]
+    intersectImage = cv2.bitwise_and(mask, bwImage)
 
-    return (contour,len(cardContours))
+    #print float(cv2.countNonZero(intersectImage)) / cv2.countNonZero(mask)
+    #showImage(image, wait=False)
+    #showImage(bwImage, 'bw2', wait=False)
+    #showImage(intersectImage, 'int')
+    return float(cv2.countNonZero(intersectImage)) / cv2.countNonZero(mask)
