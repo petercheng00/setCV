@@ -111,11 +111,11 @@ def getSets(cards, matchSets):
     return sets
 
 def main():
-    origImage = cv2.imread("sample.jpg")        
-    #showImage(origImage, 'orig')
+    origImage = cv2.imread("sample2.jpg")
+    showImage(origImage, 'orig')
 
     cannyEdges = getEdges(origImage)
-    #showImage(cannyEdges, 'canny')
+    showImage(cannyEdges, 'canny')
 
     contours, hierarchy = cv2.findContours(cannyEdges,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
     (cardContours, indices) = getParentContours(contours, hierarchy, childRequired = True)
@@ -135,10 +135,20 @@ def main():
     #print fillDict
     
     cardSets = getSets(cards, (colorDict, countDict, shapeDict, fillDict))
+
+    
     for cardSet in cardSets:
-        print map(lambda x:x.id, cardSet)
-    for card in cards:
-        showImage(card.image, str(card.id))
+        #print map(lambda x:x.id, cardSet)
+        #showImage(cardSet[0].image, 'card1', wait=False)
+        #showImage(cardSet[1].image, 'card2', wait=False)
+        #showImage(cardSet[2].image, 'card3')
+
+        copyImage = origImage.copy()
+        for i in xrange(3):
+            cv2.polylines(copyImage, [cardSet[i].origCoords], True, (255,0,0), thickness=10)
+        showImage(copyImage)
+    #for card in cards:
+    #    showImage(card.image, str(card.id))
 
 
 if __name__ == "__main__":

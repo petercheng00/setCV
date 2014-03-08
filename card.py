@@ -11,6 +11,7 @@ class Card:
     def __init__(self, id, origImage, coords):
         self.id = id
 
+        self.valid = False
         # Coordinates of card in original image, in order of 
         # UL, UR, LR, LL, if the card were in portrait mode.
         # We assume cards are 180-degree rotation invariant.
@@ -23,9 +24,10 @@ class Card:
         # self.hueHistogram = getHueHistogram(self.image)
         self.color = getHueSatHistogram(self.image)
         (self.shapes, self.count) = getParentContoursShapesAndCount(self.image)
-        self.shape = self.shapes[0]
-        self.fillPct = getFillPct(self.image, self.shape)
-
+        if (len(self.shapes) > 0):
+            self.shape = self.shapes[0]
+            self.fillPct = getFillPct(self.image, self.shape)
+            self.valid = True
         
     # Set coordinates. Assume coordinates are passed in
     # adjacent order, and shift by 1 if necessary
