@@ -24,10 +24,13 @@ class Card:
         # self.hueHistogram = getHueHistogram(self.image)
         self.color = getHueSatHistogram(self.image)
         (self.shapes, self.count) = getParentContoursShapesAndCount(self.image)
-        if (len(self.shapes) > 0):
+        if (self.shapes and len(self.shapes) > 0):
             self.shape = self.shapes[0]
             self.fillPct = getFillPct(self.image, self.shape)
             self.valid = True
+        elif DEBUG:
+            print 'invalid: ' + str(self.id)
+            showImage(self.image)
         
     # Set coordinates. Assume coordinates are passed in
     # adjacent order, and shift by 1 if necessary

@@ -5,6 +5,7 @@
 import cv2
 import numpy as np
 from common import *
+from settings import *
 
 # Return binary Canny-edge-detected image
 def getEdges(image, blur=3, threshold1=100, threshold2=200):
@@ -12,10 +13,8 @@ def getEdges(image, blur=3, threshold1=100, threshold2=200):
         blurImage = cv2.GaussianBlur(image, (blur,blur), 0)
     else:
         blurImage = image.copy()
-    #showImage(blurImage, 'blur')
     bwImage = cv2.cvtColor(blurImage, cv2.COLOR_BGR2GRAY)
     cannyImage = cv2.Canny(bwImage,threshold1,threshold2)
-    #showImage(cannyImage, 'canny')
     return cannyImage
 
 # Return all contours that have no parents and have at least one child
@@ -92,9 +91,6 @@ def getQuadFromContourHough(contourImage):
     #    cv2.line(contourImage, (x1, y1), (x2, y2), 255, 1)
     #showImage(contourImage)
 
-
-    return [1,1,1,1]
-
 # Detect quadrilaterals in contours using hough transforms
 def getQuadsFromContoursHough(contours, image):
     quads = []
@@ -113,23 +109,22 @@ def getParentContoursShapesAndCount(image):
     cannyEdges = getEdges(image, blur=15, threshold1=10, threshold2=30)
     # dilate so that contours are continous at sharp corners
     #showImage(cannyEdges, 'before')
-    #cannyEdges  = cv2.dilate(cannyEdges, np.ones((7,7),np.uint8))
-    cannyEdges = cv2.morphologyEx(cannyEdges, cv2.MORPH_CLOSE, np.ones((15,15),np.uint8))
-    #showImage(cannyEdges, 'after')
+    cannyEdges  = cv2.dilate(cannyEdges, np.ones((7,7),np.uint8))
+    #cannyEdges = cv2.morphologyEx(cannyEdges, cv2.MORPH_CLOSE, np.ones((17,17),np.uint8))
     
-    contours, hierarchy = cv2.findContours(cannyEdges,cv2.RETR_TREE,cv2.CHAIN_APPROX_NONE)
+    contours, hierarchy = cv2.findContours(cannyEdges,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+    if len(contours) == 0:
+        return (None, None)
     (cardContours, indices) = getParentContours(contours, hierarchy, childRequired=True)
-
-
-    #image1 = np.zeros((image.shape[0],image.shape[1],3), np.uint8)
-    #cv2.drawContours(image1, contours, -1, [0,0,255])
-    #showImage(image1, 'contours1')
-
-    #cv2.drawContours(image1, cardContours, -1, [255,0,0])
-    #showImage(image1, 'contours2')
-
-    #cv2.drawContours(image1, [cardContours[0]], -1, [0,255,0])
-    #showImage(image1, 'contours3')
+    if DEBUGCONTOURS:
+        showImage(cannyEdges, 'canny')
+        image1 = np.zeros((image.shape[0],image.shape[1],3), np.uint8)
+        cv2.drawContours(image1, contours, -1, [0,0,255])
+        showImage(image1, 'contours1')
+        cv2.drawContours(image1, cardContours, -1, [255,0,0])
+        showImage(image1, 'contours2')
+        cv2.drawContours(image1, [cardContours[0]], -1, [0,255,0])
+        showImage(image1, 'contours3')
 
     return (cardContours,len(cardContours))
 
@@ -139,11 +134,10 @@ def getFillPct(image, contour):
 
     bwImage = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     bwImage = cv2.adaptiveThreshold(bwImage, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY_INV, 111, 2)
-    #bwImage = cv2.threshold(bwImage, 180, 255, cv2.THRESH_BINARY_INV)[1]
     intersectImage = cv2.bitwise_and(mask, bwImage)
 
-    #print float(cv2.countNonZero(intersectImage)) / cv2.countNonZero(mask)
-    #showImage(image, wait=False)
-    #showImage(bwImage, 'bw2', wait=False)
-    #showImage(intersectImage, 'int')
+    if DEBUGFILL:
+        showImage(image, wait=False)
+        showImage(bwImage, 'bw2', wait=False)
+        showImage(intersectImage, 'int')
     return float(cv2.countNonZero(intersectImage)) / cv2.countNonZero(mask)

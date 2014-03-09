@@ -3,7 +3,7 @@ import numpy as np
 import math
 import itertools
 
-import constants
+from settings import *
 from card import Card
 from features import *
 from sets import Set
@@ -17,13 +17,14 @@ def createCards(cardQuads, origImage):
     id = 0
     for quad in cardQuads:
         card = Card(id, origImage, quad)
-        cards.append(card)
-        id += 1
+        if card.valid:
+            cards.append(card)
+            id += 1
     return cards
 
 def sameCardColor(hist1, hist2):
     histDiff = cv2.compareHist(hist1, hist2, 0)
-    return histDiff > constants.color_similarity_threshold
+    return histDiff > color_similarity_threshold
 
 def sameCardCount(count1, count2):
     return count1 == count2
@@ -53,10 +54,10 @@ def sameCardShape(shape1, shape2):
     intersectImage = cv2.bitwise_and(image1, image2)
     #showImage(intersectImage, 'and')
 
-    return cv2.countNonZero(intersectImage) > constants.shape_similarity_threshold
+    return cv2.countNonZero(intersectImage) > shape_similarity_threshold
 
 def sameCardFill(fillPct1, fillPct2):
-    return constants.getFillAmount(fillPct1) == constants.getFillAmount(fillPct2)
+    return getFillAmount(fillPct1) == getFillAmount(fillPct2)
 
 def matchCardAttributes(cards, attribute, equalityTest):
     unmatched = list(xrange(len(cards)))
@@ -110,49 +111,56 @@ def getSets(cards, matchSets):
             sets.append(combination)
     return sets
 
-def main():
-    origImage = cv2.imread("sample2.jpg")
-    showImage(origImage, 'orig')
+def main(imageFile):
+    origImage = cv2.imread(imageFile)
 
     cannyEdges = getEdges(origImage)
-    showImage(cannyEdges, 'canny')
 
     contours, hierarchy = cv2.findContours(cannyEdges,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
     (cardContours, indices) = getParentContours(contours, hierarchy, childRequired = True)
 
-    cardQuads = getQuadsFromContoursPoly(cardContours)
 
+    cardQuads = getQuadsFromContoursPoly(cardContours)
     cards = createCards(cardQuads, origImage)
 
     (colorDict, countDict, shapeDict, fillDict) = matchCards(cards)
-    #print 'colors'
-    #print colorDict
-    #print 'counts'
-    #print countDict
-    #print 'shapes'
-    #print shapeDict
-    #print 'fills'
-    #print fillDict
     
     cardSets = getSets(cards, (colorDict, countDict, shapeDict, fillDict))
 
     
     for cardSet in cardSets:
-        #print map(lambda x:x.id, cardSet)
-        #showImage(cardSet[0].image, 'card1', wait=False)
-        #showImage(cardSet[1].image, 'card2', wait=False)
-        #showImage(cardSet[2].image, 'card3')
-
         copyImage = origImage.copy()
         for i in xrange(3):
             cv2.polylines(copyImage, [cardSet[i].origCoords], True, (255,0,0), thickness=10)
         showImage(copyImage)
-    #for card in cards:
-    #    showImage(card.image, str(card.id))
+
+    if DEBUG:
+        showImage(origImage, 'orig')
+        showImage(cannyEdges, 'canny')
+        contourImage = origImage.copy()
+        cv2.drawContours(contourImage, cardContours, -1, 255, thickness=5)
+        showImage(contourImage, 'contours')
+        print 'num cards: ' + str(len(cards))
+        for card in cards:
+            showImage(card.image, str(card.id), wait=True, replaceAll=True)
+        print 'colors'
+        print colorDict
+        print 'counts'
+        print countDict
+        print 'shapes'
+        print shapeDict
+        print 'fills'
+        print fillDict
+        for cardSet in cardSets:
+            print map(lambda x:x.id, cardSet)
+            showImage(cardSet[0].image, 'card1', wait=False)
+            showImage(cardSet[1].image, 'card2', wait=False)
+            showImage(cardSet[2].image, 'card3')
+
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1])
 
 def webcam():
     cv2.namedWindow(SOURCE)
