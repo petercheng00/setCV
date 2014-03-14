@@ -1,9 +1,11 @@
 DEBUG = True
-DEBUGCONTOURS = True
+DEBUGCONTOURS = False
 DEBUGFILL = False
+DEBUGSHAPES = False
+DEBUGCOLORS = False
 
-color_similarity_threshold = 0
-shape_similarity_threshold = 2000
+color_similarity_threshold = 0.01
+shape_similarity_threshold = 8000
 
 fill_empty_half_threshold = 0.4
 fill_half_full_threshold = 0.8

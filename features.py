@@ -65,7 +65,7 @@ def getQuadsFromContoursPoly(contours):
         quad = getQuadFromContourPoly(contour)
         if len(quad) == 4:
             quads.append(quad)
-    return quads
+    return np.array(quads)
 
 # Detect lines in contour image using hough transform
 # TODO: not finished
@@ -74,8 +74,6 @@ def getQuadFromContourHough(contourImage):
     if lines != None:
         for x1,y1,x2,y2 in lines[0]:
             cv2.line(contourImage, (x1, y1), (x2, y2), 255,5)
-    showImage(contourImage)
-
     #lines = cv2.HoughLines(contourImage, 1, 0.5*np.pi/180, 50)
     #for line in lines[0]:
     #    rho = line[0]

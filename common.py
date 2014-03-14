@@ -7,6 +7,7 @@ def showImage(im, name='image', wait=True, replaceAll=False):
     sys.stdout.flush()
     if replaceAll:
         cv2.destroyAllWindows()
+    cv2.namedWindow(name, 0)
     cv2.imshow(name, im)
     if wait:
         key = cv2.waitKey()

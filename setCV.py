@@ -22,9 +22,29 @@ def createCards(cardQuads, origImage):
             id += 1
     return cards
 
+def filterQuadSizes(quads):
+    quadPerimeters = [np.linalg.norm(quad[1]-quad[0]) + \
+                      np.linalg.norm(quad[2]-quad[1]) + \
+                      np.linalg.norm(quad[3]-quad[2]) + \
+                      np.linalg.norm(quad[0]-quad[3]) for quad in quads]
+    perimeterMedian = np.median(quadPerimeters)
+    perimeterStd = np.std(quadPerimeters)
+    valid = np.array([abs(perimeter - perimeterMedian) < 2*perimeterStd for perimeter in quadPerimeters])
+    return quads[valid]
+
 def sameCardColor(hist1, hist2):
-    histDiff = cv2.compareHist(hist1, hist2, 0)
-    return histDiff > color_similarity_threshold
+    histIntersect = cv2.compareHist(hist1, hist2, 2)
+    sumHist1 = sum(sum(hist1))
+    sumHist2 = sum(sum(hist2))
+    if DEBUGCOLORS:
+        print str(histIntersect / sumHist1 > color_similarity_threshold or \
+        histIntersect / sumHist2 > color_similarity_threshold) + \
+        ' hist ratio = ' + str(histIntersect/sumHist1) + ', ' + str(histIntersect/sumHist2)
+        showImage(hist1, 'hist1', wait=False)
+        showImage(hist2, 'hist2')
+
+    return histIntersect / sumHist1 > color_similarity_threshold or \
+        histIntersect / sumHist2 > color_similarity_threshold
 
 def sameCardCount(count1, count2):
     return count1 == count2
@@ -42,19 +62,24 @@ def sameCardShape(shape1, shape2):
 
     image1 = np.zeros((maxYDiff,maxXDiff), np.uint8)
     cv2.drawContours(image1, [shape1], 0, 255, offset=(-minX1, -minY1))
-    image1 = cv2.dilate(image1, np.ones((7,7), np.uint8))
-    #showImage(image1, 'contour1', wait=False)
+    image1 = cv2.dilate(image1, np.ones((17,17), np.uint8))
+    if DEBUGSHAPES:
+        showImage(image1, 'contour1', wait=False)
 
     image2 = np.zeros((maxYDiff,maxXDiff), np.uint8)
     cv2.drawContours(image2, [shape2], 0, 255, offset=(-minX2, -minY2))
-    image2 = cv2.dilate(image2, np.ones((7,7), np.uint8))
-    #showImage(image2, 'contour2', wait=False)
+    image2 = cv2.dilate(image2, np.ones((17,17), np.uint8))
+    if DEBUGSHAPES:
+        showImage(image2, 'contour2', wait=False)
 
 
     intersectImage = cv2.bitwise_and(image1, image2)
-    #showImage(intersectImage, 'and')
-
-    return cv2.countNonZero(intersectImage) > shape_similarity_threshold
+    intersectCount = cv2.countNonZero(intersectImage)
+    if DEBUGSHAPES:
+        print 'intersect = ' + str(intersectCount) + '/' + str(shape_similarity_threshold)
+        showImage(intersectImage, 'and')
+    
+    return intersectCount > shape_similarity_threshold
 
 def sameCardFill(fillPct1, fillPct2):
     return getFillAmount(fillPct1) == getFillAmount(fillPct2)
@@ -119,8 +144,10 @@ def main(imageFile):
     contours, hierarchy = cv2.findContours(cannyEdges,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
     (cardContours, indices) = getParentContours(contours, hierarchy, childRequired = True)
 
-
     cardQuads = getQuadsFromContoursPoly(cardContours)
+
+    cardQuads = filterQuadSizes(cardQuads)
+
     cards = createCards(cardQuads, origImage)
 
     (colorDict, countDict, shapeDict, fillDict) = matchCards(cards)
@@ -141,8 +168,12 @@ def main(imageFile):
         cv2.drawContours(contourImage, cardContours, -1, 255, thickness=5)
         showImage(contourImage, 'contours')
         print 'num cards: ' + str(len(cards))
+        cardsImage = origImage.copy()
         for card in cards:
-            showImage(card.image, str(card.id), wait=True, replaceAll=True)
+            cv2.polylines(cardsImage, [card.origCoords], True, (255,0,0), thickness=10)
+        showImage(cardsImage, 'all cards')
+        #for card in cards:
+        #    showImage(card.image, str(card.id), wait=True, replaceAll=True)
         print 'colors'
         print colorDict
         print 'counts'

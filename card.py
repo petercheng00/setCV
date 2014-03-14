@@ -49,4 +49,3 @@ class Card:
         dstPoints = np.array([[0, 0], [w, 0], [w, h], [0, h]], np.float32)
         transform = cv2.getPerspectiveTransform(self.origCoords.astype(np.float32), dstPoints)
         return cv2.warpPerspective(origImage, transform, (w, h))
-
