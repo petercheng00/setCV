@@ -21,12 +21,13 @@ def getEdges(image, blur=3, threshold1=100, threshold2=200):
 def getParentContours(contours, hierarchy, childRequired=False):
     cardContours = []
     indices = []
-    hierarchy = hierarchy[0]
-    for i in xrange(len(contours)):
-        # contour must have no parent
-        if (hierarchy[i][3] == -1 and (not childRequired or hierarchy[i][2] != -1)):
-            cardContours.append(contours[i])
-            indices.append(i)
+    if hierarchy is not None:
+        hierarchy = hierarchy[0]
+        for i in xrange(len(contours)):
+            # contour must have no parent
+            if (hierarchy[i][3] == -1 and (not childRequired or hierarchy[i][2] != -1)):
+                cardContours.append(contours[i])
+                indices.append(i)
     return (cardContours, indices)
 
 # Try approxPolyDP with multiple errors until we receive

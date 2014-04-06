@@ -28,9 +28,9 @@ class Card:
             self.shape = self.shapes[0]
             self.fillPct = getFillPct(self.image, self.shape)
             self.valid = True
-        elif DEBUG:
-            print 'invalid: ' + str(self.id)
-            showImage(self.image)
+        #elif DEBUG:
+        #    print 'invalid: ' + str(self.id)
+        #    showImage(self.image)
         
     # Set coordinates. Assume coordinates are passed in
     # adjacent order, and shift by 1 if necessary

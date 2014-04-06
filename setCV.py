@@ -29,8 +29,11 @@ def filterQuadSizes(quads):
                       np.linalg.norm(quad[0]-quad[3]) for quad in quads]
     perimeterMedian = np.median(quadPerimeters)
     perimeterStd = np.std(quadPerimeters)
-    valid = np.array([abs(perimeter - perimeterMedian) < 2*perimeterStd for perimeter in quadPerimeters])
-    return quads[valid]
+    if perimeterStd > perimeterMedian * 0.25:
+        valid = np.array([abs(perimeter - perimeterMedian) < 2*perimeterStd for perimeter in quadPerimeters])
+        return quads[valid]
+    else:
+        return quads
 
 def sameCardColor(hist1, hist2):
     histIntersect = cv2.compareHist(hist1, hist2, 2)
@@ -43,8 +46,7 @@ def sameCardColor(hist1, hist2):
         showImage(hist1, 'hist1', wait=False)
         showImage(hist2, 'hist2')
 
-    return histIntersect / sumHist1 > color_similarity_threshold or \
-        histIntersect / sumHist2 > color_similarity_threshold
+    return histIntersect / min(sumHist1, sumHist2) > color_similarity_threshold
 
 def sameCardCount(count1, count2):
     return count1 == count2
@@ -74,12 +76,16 @@ def sameCardShape(shape1, shape2):
 
 
     intersectImage = cv2.bitwise_and(image1, image2)
-    intersectCount = cv2.countNonZero(intersectImage)
+    intersectCount = float(cv2.countNonZero(intersectImage))
+    count1 = cv2.countNonZero(image1)
+    count2 = cv2.countNonZero(image2)
     if DEBUGSHAPES:
-        print 'intersect = ' + str(intersectCount) + '/' + str(shape_similarity_threshold)
+        print str(intersectCount / count1 > shape_similarity_threshold or \
+                  intersectCount / count2 > shape_similarity_threshold) + \
+            ' intersect ratio = ' + str(intersectCount/count1) + ', ' + str(intersectCount/count2)
         showImage(intersectImage, 'and')
     
-    return intersectCount > shape_similarity_threshold
+    return intersectCount / min(count1, count2) > shape_similarity_threshold
 
 def sameCardFill(fillPct1, fillPct2):
     return getFillAmount(fillPct1) == getFillAmount(fillPct2)
@@ -136,9 +142,33 @@ def getSets(cards, matchSets):
             sets.append(combination)
     return sets
 
-def main(imageFile):
-    origImage = cv2.imread(imageFile)
+def detectSet(origImage):
+    cannyEdges = getEdges(origImage)
 
+    contours, hierarchy = cv2.findContours(cannyEdges,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+    (cardContours, indices) = getParentContours(contours, hierarchy, childRequired = True)
+
+    cardQuads = getQuadsFromContoursPoly(cardContours)
+
+    cardQuads = filterQuadSizes(cardQuads)
+
+    cards = createCards(cardQuads, origImage)
+
+    (colorDict, countDict, shapeDict, fillDict) = matchCards(cards)
+    
+    cardSets = getSets(cards, (colorDict, countDict, shapeDict, fillDict))
+    
+    #contourImage = origImage.copy()
+    #cv2.drawContours(contourImage, contours, -1, 255, thickness=5)
+    #cv2.imshow('canny', cannyEdges)
+    #cv2.imshow('contours', contourImage)
+    cardsImage = origImage.copy()
+    for card in cards:
+        cv2.polylines(cardsImage, [card.origCoords], True, (255,0,0), thickness=10)
+    cv2.imshow('cards', cardsImage)
+
+
+def detectSetDebug(origImage):
     cannyEdges = getEdges(origImage)
 
     contours, hierarchy = cv2.findContours(cannyEdges,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
@@ -154,7 +184,6 @@ def main(imageFile):
     
     cardSets = getSets(cards, (colorDict, countDict, shapeDict, fillDict))
 
-    
     for cardSet in cardSets:
         copyImage = origImage.copy()
         for i in xrange(3):
@@ -188,13 +217,8 @@ def main(imageFile):
             showImage(cardSet[1].image, 'card2', wait=False)
             showImage(cardSet[2].image, 'card3')
 
-
-
-if __name__ == "__main__":
-    main(sys.argv[1])
-
 def webcam():
-    cv2.namedWindow(SOURCE)
+    cv2.namedWindow('webcam')
     vc = cv2.VideoCapture(camIndex)
 
     if vc.isOpened(): # try to get the first frame
@@ -203,10 +227,17 @@ def webcam():
         rval = False
 
     while rval:
-        cv2.imshow(SOURCE, frame)
+        cv2.imshow('webcam', frame)
+        detectSet(frame)
         rval, frame = vc.read()
         key = cv2.waitKey(20)
         if key == 27: # exit on ESC
             break
 
     cv2.destroyWindow("preview")
+
+if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        detectSet(cv2.imread(sys.argv[1]))
+    else:
+        webcam()
